@@ -74,8 +74,11 @@ void freeData(Data d) {
 	free(d);
 }
 
-char readDNA (FILE *fp, char *string) {
+char readDNA (FILE *fp, char *string, char *name) {
 	string[0] = '\0';
+	if (fgetc(fp) == '>') {
+		fscanf(fp, "%s\n", name);
+	}
 	while(TRUE) {
 		char current = fgetc(fp);
 		if (current == 'A' || current == 'T' || current == 'C' || current == 'G') {
@@ -84,13 +87,41 @@ char readDNA (FILE *fp, char *string) {
 				// search forward
 			}
 			string[i] = current;
+		} else if (current == '>') {
+			ungetc(current, fp);
+			return current;
 		}
-		if (current == '>' || current == EOF) {
+		if (current == EOF) {
 			return current;
 		}
 	}
 }
 
+void sortData (Data *data) {
+	int i, j;
+	int length = 0;
+	// find length of data
+	while (data[length] != NULL) {
+		length++;
+	}
+	for (i = 0; i < length - 1; i++) {
+		int largestIndex = i;
+		for (j = i; j < length; j++) {
+			if (data[j]->gcPercent > data[largestIndex]->gcPercent) {
+				largestIndex = j;
+			}
+		}
+		// once largest index is found, move it to i and everything behind it up one
+		Data temp = data[largestIndex];
+		int k;
+		for(k = largestIndex; k > i; k--) {
+			data[k] = data[k-1];
+		}
+		data[i] = temp;
+	}
+}
+
+/*
 void sortData (Data *data) {
 	int i = 0; 
 	int length = 0;
@@ -98,6 +129,7 @@ void sortData (Data *data) {
 	while (data[length] != NULL) {
 		length++;
 	}
+	printf("length: %d\n", length);
 	int j;
 	for (j = 0; j < length - 1; j++) {
 		min = j;
@@ -113,6 +145,7 @@ void sortData (Data *data) {
 		}
 	}
 }
+*/
 
 void printData (Data *data) {
 	int i = 0;
@@ -143,23 +176,20 @@ int main (int argc, char *argv[]) {
 	database[10] = NULL;
 	int i = 0;
 	
-	char *currentString = malloc(sizeof(char)*MAX_BP);
-	char *currentName = malloc(sizeof(char)*32);
+	char *currentString;
+	char *currentName;
 
 	while (TRUE) {
 		currentString = malloc(sizeof(char)*MAX_BP);
 		currentName = malloc(sizeof(char)*32);
 
-		char ret = readDNA(fp, currentString);
-
-		if (ret == '>') {
-			fscanf(fp, "%s\n", currentName);
-		} else if (ret == EOF) {
-			break;
-		}
+		char ret = readDNA(fp, currentString, currentName);
 		
 		database[i] = newData(currentName, currentString);
 		i++;
+		if (ret == EOF) {
+			break;
+		}
 	}
 	database[i] = NULL;
 

@@ -11,7 +11,7 @@ typedef struct _fasta *Data;
 void countGC(Data d);
 Data newData(char *name, char *string);
 void freeData(Data d);
-char readDNA(FILE *fp, char *string);
+char readDNA(FILE *fp, char *string, char *name);
 void sortData(Data *data);
 void printData(Data *data);
 void printFasta(Data fasta);
